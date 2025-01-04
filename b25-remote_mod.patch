@@ -1,7 +1,7 @@
 diff -ur rec10.orig/b25-remote/b25-server.cpp rec10/b25-remote/b25-server.cpp
 --- rec10.orig/b25-remote/b25-server.cpp	2020-06-13 20:16:34.169463194 +0900
 +++ rec10/b25-remote/b25-server.cpp	2020-06-10 00:21:58.052769653 +0900
-@@ -9,5 +9,6 @@
+@@ -9,6 +9,7 @@
  		printf("サーバの起動に失敗しました。\nTCPポートまたはカードリーダをオープンできません。\n");
  		return TRUE;
  	}
@@ -34,11 +34,11 @@ diff -ur rec10.orig/b25-remote/CasServer.cpp rec10/b25-remote/CasServer.cpp
 diff -ur rec10.orig/b25-remote/CasServer.h rec10/b25-remote/CasServer.h
 --- rec10.orig/b25-remote/CasServer.h	2020-06-13 20:16:34.169463194 +0900
 +++ rec10/b25-remote/CasServer.h	2020-06-10 00:19:37.849653122 +0900
-@@ -35,5 +35,6 @@
+@@ -35,7 +35,8 @@
 
  	const BOOL OpenServer(const WORD wServerPort);
  	void CloseServer(void);
--
+-	
 +	void WaitServer(void); // add
 +
  	const DWORD GetClientNum(void) const;
