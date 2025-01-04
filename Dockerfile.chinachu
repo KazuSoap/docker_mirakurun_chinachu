@@ -1,0 +1,34 @@
+ARG ARCH=
+FROM ${ARCH}node:12.22.7-buster
+
+WORKDIR /app
+RUN set -eux && \
+    : "Add Dependencies" && \
+    : "from apt" && \
+    apt-get update && apt-get upgrade -y && \
+    apt-get install -y --no-install-recommends \
+       build-essential && \
+    apt-get autoremove -y && \
+\
+    : "from npm" && \
+    npm install -g pm2 && \
+\
+    : "Install Chinachu" && \
+    : "> Download Source" && \
+    git clone https://github.com/Chinachu/Chinachu.git . && \
+\
+    : "> Install submodule" && \
+    echo 2 | ./chinachu installer && \
+\
+    : "> Install Node.js Modules" && \
+    echo 4 | ./chinachu installer && \
+\
+    : "> Install ffmpeg" && \
+    echo 5 | ./chinachu installer && \
+\
+    : "> Modify Chinachu Config" && \
+    mkdir ./log && \
+    chown -R node:node ./log && \
+    sed -i -e 's%".nave/node",%"node",%' ./processes.json
+
+CMD ["pm2", "--no-daemon", "start", "processes.json"]

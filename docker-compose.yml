@@ -1,0 +1,72 @@
+services:
+  mirakurun:
+    build:
+      context: .
+      dockerfile: ./Dockerfile.mirakurun
+    image: kazusoap/mirakurun:3.8.1
+    container_name: mirakurun
+    cap_add:
+      - SYS_ADMIN
+      - SYS_NICE
+    environment:
+      TZ: ${TZ:?err}
+    ports:
+      - ${MIRAKURUN_PORT1:?err}:${MIRAKURUN_PORT1:?err}
+      - ${MIRAKURUN_PORT2:?err}:${MIRAKURUN_PORT2:?err}
+      - ${BCAS_LINK_PORT:?err}:${BCAS_LINK_PORT:?err}
+    networks:
+      - mirakurun_net
+    devices:
+      - /dev/bus:/dev/bus
+      - /dev/pt3video0:/dev/pt3video0
+      - /dev/pt3video1:/dev/pt3video1
+      - /dev/pt3video2:/dev/pt3video2
+      - /dev/pt3video3:/dev/pt3video3
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - ./for_deploy/config/:/app-config/
+      - ./for_deploy/data/:/app-data/
+    restart: always
+    logging:
+      driver: json-file
+      options:
+        max-file: "1"
+        max-size: 10m
+    # entrypoint: ""
+    # command: "tail -f /dev/null"
+    command: "/app-config/bin/container-init.sh"
+  chinachu:
+    build:
+      context: .
+      dockerfile: ./Dockerfile.chinachu
+    image: kazusoap/chinachu:gamma
+    container_name: chinachu
+    environment:
+      TZ: ${TZ:?err}
+    ports:
+      - ${CHINACHU_PORT:?err}:${CHINACHU_PORT:?err}
+    networks:
+      - mirakurun_net
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - ./for_deploy/chinachu_config/data/:/app/data/
+      - ./for_deploy/chinachu_config/config.json:/app/config.json
+      - ./for_deploy/chinachu_config/rules.json:/app/rules.json
+      - /mnt/exthd1/data/video/:/mnt/exthd1/data/video/
+    restart: always
+    logging:
+      driver: json-file
+      options:
+        max-file: "1"
+        max-size: 10m
+    # entrypoint: ""
+    # command: "tail -f /dev/null"
+
+networks:
+  mirakurun_net:
+    name: mirakurun_net
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: ${DTV_SUBNET:?err}

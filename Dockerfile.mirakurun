@@ -1,0 +1,95 @@
+ARG ARCH=
+FROM ${ARCH}node:16.6.1-buster AS build
+WORKDIR /app
+ENV DOCKER=YES
+# ADD . . <- comment out
+# add {{{
+# ADD ./mirakurun .
+# }}} add
+RUN apt-get update && \
+    apt-get upgrade -y && \
+    apt-get install -y --no-install-recommends && \
+    build-essential && \
+    git
+
+RUN git clone https://github.com/Chinachu/Mirakurun.git -b 3.8.0 --depth 1 .
+    npm install && \
+    npm run build && \
+    npm install -g --unsafe-perm --production
+
+FROM ${ARCH}node:16.6.1-buster-slim
+
+WORKDIR /app
+RUN apt-get update && \
+    apt-get upgrade -y && \
+    apt-get install -y --no-install-recommends \
+        make \
+        gcc \
+        g++ \
+        pkg-config \
+        pcscd \
+        libpcsclite-dev \
+        libccid \
+        libdvbv5-dev \
+        pcsc-tools \
+        dvb-tools \
+        && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+COPY --from=build /usr/local/lib/node_modules/mirakurun /app
+
+CMD ["./docker/container-init.sh"]
+# EXPOSE 40772 9229 <- comment out
+
+# add {{{
+COPY ./b25-remote_mod.patch /tmp/
+RUN set -eux && \
+    : "Add Dependencies" && \
+    apt-get update && \
+    apt-get upgrade -y && \
+    apt-get install -y --no-install-recommends \
+        autoconf \
+        automake \
+        ca-certificates \
+        cmake \
+        git \
+        patch \
+        socat \
+        && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/* && \
+\
+    : "Build b25-remote (BonCasLink)" && \
+    cd /tmp && \
+    git clone https://bitbucket.org/gn64/rec10.git --depth 1 && \
+    cd /tmp/rec10/ && \
+    patch -p1 < /tmp/b25-remote_mod.patch && \
+    cd /tmp/rec10/b25-remote/ && \
+    make install && \
+\
+    : "Build libarib25 (ARIB STD-B25 Library)" && \
+    cd /tmp && \
+    git clone https://github.com/stz2012/libarib25.git --depth 1 && \
+    cd /tmp/libarib25/ && \
+    cmake -DCMAKE_INSTALL_LIBDIR="lib" . && \
+    make install && \
+\
+    : "Build recpt1" && \
+    cd /tmp && \
+    git clone https://github.com/stz2012/recpt1.git --depth 1 && \
+    cd /tmp/recpt1/recpt1 && \
+    ./autogen.sh && \
+    ./configure --enable-b25 && \
+    make && \
+    make install && \
+\
+    : "Build arib25-stream" && \
+    cd /tmp && \
+    git clone https://github.com/rndomhack/arib25-stream.git --depth 1 && \
+    cd /tmp/arib25-stream/ && \
+    gcc src/arib25.c -o bin/arib25-stream -std=c99 -larib25 && \
+    install -m755 ./bin/arib25-stream /usr/local/bin && \
+\
+    : "Cleanup" && \
+    rm -rf /tmp/*
+# }}} add
